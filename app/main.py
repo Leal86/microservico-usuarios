@@ -1,5 +1,6 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends
 from pydantic import BaseModel, EmailStr
+from app.auth import validar_token, exigir_permissions
 
 app = FastAPI()
 
@@ -19,7 +20,9 @@ def health():
     return {"status": "ok"}
 
 @app.post("/users", status_code=201)
-def criar_usuario(usuario: UsuarioEntrada):
+def criar_usuario(usuario: UsuarioEntrada,
+                  token=Depends(exigir_permissions("create:users"))
+):
     
     novo_usuario = {
         "id": len(usuarios) + 1,
@@ -32,12 +35,16 @@ def criar_usuario(usuario: UsuarioEntrada):
     return novo_usuario
 
 @app.get("/users")
-def listar_usuarios():
+def listar_usuarios(
+    token=Depends(exigir_permissions("read:users"))
+):
     return usuarios
 
 @app.get("/users/{usuario_id}")
-def buscar_usuario(usuario_id: int):
-    
+def buscar_usuario(
+    usuario_id: int,
+    token=Depends(exigir_permissions("read:users"))
+):
     for usuario in usuarios:
         if usuario["id"] == usuario_id:
             return usuario
